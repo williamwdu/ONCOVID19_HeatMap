@@ -1,4 +1,4 @@
-package com.example.on_covid_19;
+package com.weid.on_covid_19;
 
 import com.google.android.gms.maps.model.LatLng;
 

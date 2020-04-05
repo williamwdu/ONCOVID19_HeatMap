@@ -1,4 +1,4 @@
-package com.example.on_covid_19;
+package com.weid.on_covid_19;
 
 import android.content.Context;
 
@@ -22,6 +22,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.example.on_covid_19", appContext.getPackageName());
+        assertEquals("com.weid.on_covid_19", appContext.getPackageName());
     }
 }
