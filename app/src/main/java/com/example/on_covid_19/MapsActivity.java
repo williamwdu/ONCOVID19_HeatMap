@@ -9,6 +9,7 @@ import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -16,6 +17,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -42,7 +44,11 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -73,9 +79,40 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 2);
         }
-        Button myButton = (Button) findViewById(R.id.button1);
 
+        Button buttonDeath = (Button) findViewById(R.id.button1);
+        Button buttonTotal = (Button) findViewById(R.id.button2);
+        Button buttonActive = (Button) findViewById(R.id.button3);
 
+        buttonDeath.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                v.setBackgroundColor(Color.parseColor("#ff3600"));
+                buttonTotal.setBackgroundColor(Color.parseColor("#ffc300"));
+                buttonActive.setBackgroundColor(Color.parseColor("#ffc300"));
+                mOverlay.remove();
+                addHeatMap(3);
+            }
+        });
+
+        buttonActive.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                v.setBackgroundColor(Color.parseColor("#ff3600"));
+                buttonTotal.setBackgroundColor(Color.parseColor("#ffc300"));
+                buttonDeath.setBackgroundColor(Color.parseColor("#ffc300"));
+                mOverlay.remove();
+                addHeatMap(2);
+            }
+        });
+
+        buttonTotal.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                v.setBackgroundColor(Color.parseColor("#ff3600"));
+                buttonDeath.setBackgroundColor(Color.parseColor("#ffc300"));
+                buttonActive.setBackgroundColor(Color.parseColor("#ffc300"));
+                mOverlay.remove();
+                addHeatMap(1);
+            }
+        });
     }
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
@@ -94,6 +131,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 return;
         }
     }
+
+
 
 
     /**
@@ -133,7 +172,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        addHeatMap();
+        addHeatMap(2);
 
     }
     private void downloadcsv(){
@@ -157,11 +196,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void addHeatMap() {
+    private void addHeatMap(int type) {
+        mMap.clear();
         List<COVIDCase> covidlist = null;
 
         // Get the data: latitude/longitude positions of police stations.
-        covidlist = readItems(1);
+        covidlist = readItems(type);
         List<LatLng> list = new ArrayList<>();
         covidlist.forEach(x->list.add(x.coor));
 
@@ -170,11 +210,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .data(list)
                 .build();
         // Add a tile overlay to the map, using the heat map tile provider.
-        mProvider.setRadius(300);
+        CameraPosition cameraPosition = mMap.getCameraPosition();
+        mProvider.setRadius((int)cameraPosition.zoom*28);
         mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
-
+        mOverlay.clearTileCache();
+        addPins(covidlist);
     }
 
+    private void addPins(List<COVIDCase> list){
+        Map<String, Long> counted = list.stream().collect(Collectors.groupingBy(x->x.name, Collectors.counting()));
+        HashMap<String, LatLng> institutions = new HashMap<>();
+
+        list.stream().forEach(x->institutions.put(x.name,x.coor));
+
+        counted.forEach((k,v)->{
+            LatLng pin = institutions.get(k);
+            mMap.addMarker(new MarkerOptions().position(pin)
+                    .title(k+" Cases:"+v));
+
+        });
+    }
     private ArrayList<COVIDCase> readItems(int type)  {
         ArrayList<COVIDCase> totallist = new ArrayList<>();
         ArrayList<COVIDCase> result = new ArrayList<>();
@@ -195,10 +250,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if(type==1) { //total
             totallist.stream().forEach(x->result.add(x));
         }
-        if(type==1) { //active
+        if(type==2) { //active
             totallist.stream().filter(x->x.status.equals("Not Resolved")).forEach(x->result.add(x));
         }
-        if(type==1) { //death
+        if(type==3) { //death
             totallist.stream().filter(x->x.status.equals("Fatal")).forEach(x->result.add(x));
         }
         return result;
