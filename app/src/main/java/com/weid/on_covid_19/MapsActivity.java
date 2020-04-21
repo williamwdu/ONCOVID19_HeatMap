@@ -236,8 +236,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             reader.readNext();
             while ((nextLine = reader.readNext()) != null) {
                 //og.d("ss",nextLine[4] + nextLine[5] + nextLine[11] + nextLine[12]+ "...etc...");
-                double lat = Double.parseDouble(nextLine[11]);
-                double lng = Double.parseDouble(nextLine[12]);
+                double lat = Double.parseDouble(nextLine[10]);
+                double lng = Double.parseDouble(nextLine[11]);
                 totallist.add(new COVIDCase(new LatLng(lat, lng),nextLine[5],nextLine[4],nextLine[6]));
             }
         } catch (IOException e) {
